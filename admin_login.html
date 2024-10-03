@@ -1,0 +1,148 @@
+<html>
+    <head>
+        <title>Admin Login</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f4f4f4;
+                flex-direction: column;
+            }
+
+            h1 {
+                font-size: 28px;
+                margin-bottom: 20px;
+                color: #333;
+            }
+
+            .login-box {
+                background-color: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                text-align: center;
+                width: 300px;
+                position: relative;
+            }
+
+            /* Back button at the top-right corner */
+            .back-button {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background-color: #ccc;
+                padding: 5px 10px;
+                border-radius: 5px;
+                color: white;
+                font-size: 14px;
+                text-decoration: none;
+            }
+
+            .back-button:hover {
+                background-color: #bbb;
+            }
+
+            .login-box h2 {
+                margin-bottom: 20px;
+                font-size: 24px;
+                color: #333;
+            }
+
+            .textbox {
+                margin: 10px 0;
+                text-align: left;
+            }
+
+            .textbox label {
+                display: block;
+                margin-bottom: 5px;
+                font-size: 14px;
+                color: #555;
+            }
+
+            .textbox input {
+                width: 100%;
+                padding: 10px;
+                margin: 5px 0;
+                display: inline-block;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-sizing: border-box;
+                font-size: 16px;
+            }
+
+            .button-container {
+                display: flex;
+                justify-content: space-between;
+            }
+
+            .button-container button {
+                width: 48%;
+                padding: 10px;
+                margin: 10px 0;
+                border: none;
+                color: white;
+                border-radius: 5px;
+                font-size: 16px;
+                cursor: pointer;
+            }
+
+            .login-button {
+                background-color: #4CAF50;
+            }
+
+            .cancel-button {
+                background-color: #f44336;
+            }
+
+            .login-button:hover {
+                background-color: #45a049;
+            }
+
+            .cancel-button:hover {
+                background-color: #e53935;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Library Management System heading -->
+        <h1>Library Management System</h1>
+        
+        <div class="login-box">
+            <!-- Back button -->
+            <a href="index.html" class="back-button">Back</a>
+            
+            <h2>Admin Login</h2>
+            <form action="login.php" method="post">
+                <!-- User ID field -->
+                <div class="textbox">
+                    <label for="username">User ID:</label>
+                    <input type="text" id="username" placeholder="Enter your User ID" name="username" required>
+                </div>
+                
+                <!-- Password field -->
+                <div class="textbox">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" placeholder="Enter your password" name="password" required>
+                </div>
+                
+                <div class="button-container">
+                    <!-- Cancel button -->
+                    <button type="button" class="cancel-button" onclick="window.location.href='index.html';">Cancel</button>
+                    <!-- Login button -->
+                    <button type="submit" class="login-button">Login</button>
+                </div>
+            </form>
+        </div>
+    </body>
+</html>
