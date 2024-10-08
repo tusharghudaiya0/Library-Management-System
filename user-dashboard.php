@@ -88,7 +88,7 @@ if (!isset($_SESSION['user_loggedin']) || $_SESSION['user_loggedin'] !== true) {
     </header>
 
     <nav>
-        <button>Reports</button>
+        <button onclick="window.location.href='reports-dashboard_user.php'">Reports</button>
         <button onclick="window.location.href='transaction.php';">Transactions</button>
     </nav>
 

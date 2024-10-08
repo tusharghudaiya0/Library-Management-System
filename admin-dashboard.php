@@ -88,8 +88,8 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     </header>
 
     <nav>
-        <button>Maintenance</button>
-        <button>Reports</button>
+        <button onclick="window.location.href='admin-maintenance.php';">Maintenance</button>
+        <button onclick="window.location.href='reports-dashboard.php';">Reports</button>
         <button onclick="window.location.href='transaction.php';">Transactions</button>
     </nav>
 

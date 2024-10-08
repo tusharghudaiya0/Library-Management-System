@@ -2,6 +2,29 @@
 session_start();
 include 'config.php';
 
+$selectedBook = null;  
+
+if (isset($_POST['bookId'])) {
+    $bookId = (int)$_POST['bookId'];
+
+    $stmt = $conn->prepare("SELECT * FROM book WHERE id = ?");
+    $stmt->bind_param("i", $bookId);
+
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $selectedBook = $result->fetch_assoc();
+        } else {
+            echo "<p>No book found for the selected ID.</p>";
+        }
+    } else {
+        echo "<p>Failed to retrieve book details.</p>";
+    }
+
+    $stmt->close();
+}
+
 if ((!isset($_SESSION['user_loggedin']) || $_SESSION['user_loggedin'] !== true) && (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true)) {
     header("Location: index.html");
     exit();
@@ -24,7 +47,6 @@ if ($result) {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,39 +81,75 @@ if ($result) {
             background-color: #45a049;
         }
         .dialogue-box {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-        }
-        .dialogue-box h2 {
-            margin-top: 0;
-        }
-        .dialogue-box input, .dialogue-box select, .dialogue-box textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .dialogue-box .close-button {
-            background-color: #f44336;
-            border: none;
-            color: white;
-            padding: 10px;
-            cursor: pointer;
-        }
-        .dialogue-box .close-button:hover {
-            background-color: #e53935;
-        }
+    width: 50%; /* Adjust the width to fit within the page */
+    max-width: 600px; /* Set a maximum width */
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    display: none; /* Initially hidden */
+}
+
+/* Style to show the dialogue box */
+.dialogue-box.active {
+    display: block;
+}
+
+/* Add padding to form elements to avoid cramped layout */
+.dialogue-box form input, .dialogue-box form select, .dialogue-box form textarea {
+    width: 100%; /* Make input fields take the full width of the container */
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Style the buttons */
+.dialogue-box form button {
+    padding: 10px 15px;
+    margin-right: 10px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.dialogue-box form button.close-button {
+    background-color: #6c757d;
+}
+
+/* Ensure the form doesn't overflow */
+.dialogue-box form {
+    max-height: 400px;
+    overflow-y: auto;
+}
     </style>
     <script>
+        function fetchBookDetails() {
+            var bookId = document.getElementById("bookId").value;
+
+            if (bookId) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "fetch_book_details.php", true); 
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+                xhr.onreadystatechange = function() {
+                    if (this.readyState === 4 && this.status === 200) {
+                        document.getElementById("bookDetails").innerHTML = this.responseText;
+                    }
+                };
+
+                xhr.send("bookId=" + bookId);
+            } else {
+                document.getElementById("bookDetails").innerHTML = "";
+            }
+        }
         function openDialogue(dialogueId) {
             document.getElementById(dialogueId).style.display = 'block';
         }
@@ -115,38 +173,26 @@ if ($result) {
     </div>
 
     <div id="availabilityDialogue" class="dialogue-box">
-        <h2>Book Availability</h2>
-        <label for="bookId">Select Book:</label>
-        <select id="bookId">
-            <?php foreach ($book as $book): ?>
-                <option value="<?= $book['id'] ?>"><?= $book['name'] ?> by <?= $book['author'] ?></option>
-            <?php endforeach; ?>
-        </select>
+    <h2>Book Availability</h2>
+<!-- Form to select a book -->
+<form method="POST" action="javascript:void(0);">
+    <label for="bookId">Select Book:</label>
+    <select name="bookId" id="bookId" onchange="fetchBookDetails()" required>
+        <option value="">-- Select a Book --</option>
+        <!-- Populate the dropdown with books from the database -->
+        <?php
+        $books = $conn->query("SELECT id, name, author FROM book");
 
-        <h3>Search Results</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Book Name</th>
-                    <th>Author Name</th>
-                    <th>Serial Number</th>
-                    <th>Available</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                $availablebook = $conn->query("SELECT * FROM book WHERE available = TRUE");
-                while ($book = $availablebook->fetch_assoc()) {
-                    echo "<tr>
-                            <td>{$book['name']}</td>
-                            <td>{$book['author']}</td>
-                            <td>{$book['serial_number']}</td>
-                            <td>Y</td>
-                          </tr>";
-                }
-                ?>
-            </tbody>
-        </table>
+        while ($book = $books->fetch_assoc()) {
+            echo "<option value='{$book['id']}'>{$book['name']} by {$book['author']}</option>";
+        }
+        ?>
+    </select>
+</form>
+
+<div id="bookDetails">
+</div>
+
 
         <button class="close-button" onclick="closeDialogue('availabilityDialogue')">Back</button>
     </div>
@@ -156,9 +202,14 @@ if ($result) {
         <form method="POST" action="issue-book.php">
             <label for="issueBookId">Select Book:</label>
             <select id="issueBookId" name="issueBookId" required>
-                <?php foreach ($book as $book): ?>
-                    <option value="<?= $book['id'] ?>"><?= $book['name'] ?> by <?= $book['author'] ?></option>
-                <?php endforeach; ?>
+            <option value="">-- Select a Book --</option>
+        <?php
+        $books = $conn->query("SELECT id, name, author FROM book");
+
+        while ($book = $books->fetch_assoc()) {
+            echo "<option value='{$book['id']}'>{$book['name']} by {$book['author']}</option>";
+        }
+        ?>
             </select>
             
             <label for="issueDate">Issue Date:</label>
@@ -166,6 +217,9 @@ if ($result) {
 
             <label for="returnDate">Return Date:</label>
             <input type="date" id="returnDate" name="returnDate" required>
+
+            <label for="remark">Remark:</label>
+            <input type="text" id="remark" name="remark" required>
 
             <button type="submit">Issue Book</button>
             <button class="close-button" onclick="closeDialogue('issueDialogue'); return false;">Back</button>
@@ -189,23 +243,94 @@ if ($result) {
             <button class="close-button" onclick="closeDialogue('returnDialogue'); return false;">Back</button>
         </form>
     </div>
+    <?php
+$books = $conn->query("SELECT id, name, author, serial_number FROM book");
 
-    <div id="payFineDialogue" class="dialogue-box">
-        <h2>Pay Fine</h2>
-        <form method="POST" action="pay-fine.php">
-            <label for="fineBookId">Select Book:</label>
-            <select id="fineBookId" name="fineBookId" required>
-                <?php foreach ($book as $book): ?>
-                    <option value="<?= $book['id'] ?>"><?= $book['name'] ?> by <?= $book['author'] ?></option>
-                <?php endforeach; ?>
-            </select>
+// Initialize variables
+$selectedBook = null;
+$fine = 0;
 
-            <label for="fineAmount">Fine Amount:</label>
-            <input type="text" id="fineAmount" name="fineAmount" required>
+// Check if a book is selected and the form is submitted
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fineBookId'])) {
+    $selectedBookId = $_POST['fineBookId'];
+    
+    // Fetch the selected book details
+    $bookQuery = $conn->query("SELECT * FROM book WHERE id = $selectedBookId");
+    $selectedBook = $bookQuery->fetch_assoc();
 
-            <button type="submit">Pay Fine</button>
-            <button class="close-button" onclick="closeDialogue('payFineDialogue'); return false;">Back</button>
-        </form>
+    // Calculate fine if both returnDate and actualReturnDate are provided
+    if (!empty($_POST['returnDate']) && !empty($_POST['actualReturnDate'])) {
+        // Convert the dates into timestamps
+        $returnDateTimestamp = strtotime($_POST['returnDate']);
+        $actualReturnDateTimestamp = strtotime($_POST['actualReturnDate']);
+
+        // Ensure both dates are valid
+        if ($returnDateTimestamp && $actualReturnDateTimestamp) {
+            // Calculate the difference in seconds and convert it to days
+            $differenceInSeconds = $actualReturnDateTimestamp - $returnDateTimestamp;
+            $differenceInDays = ceil($differenceInSeconds / (60 * 60 * 24));
+
+            // Calculate the fine (5 Rs per day late)
+            if ($differenceInDays > 0) {
+                $fine = $differenceInDays * 5; // 5 Rs fine per day
+            }
+        }
+    }
+}
+?>
+
+<!-- HTML Form -->
+<div id="payFineDialogue" class="dialogue-box">
+    <h2>Pay Fine</h2>
+    <form method="POST" action="">
+        <!-- Dropdown for selecting a book -->
+        <label for="fineBookId">Select Book:</label>
+        <select id="fineBookId" name="fineBookId" required onchange="this.form.submit()">
+            <option value="">-- Select a Book --</option>
+            <?php
+            // Populate the dropdown with book names from the database
+            while ($book = $books->fetch_assoc()) {
+                $selected = ($selectedBook && $selectedBook['id'] == $book['id']) ? 'selected' : '';
+                echo "<option value='{$book['id']}' $selected>{$book['name']} by {$book['author']}</option>";
+            }
+            ?>
+        </select>
+
+        <!-- Serial Number Field (Auto-filled based on the selected book) -->
+        <label for="serialNumber">Serial No:</label>
+        <input type="text" id="serialNumber" name="serialNumber" value="<?= $selectedBook ? htmlspecialchars($selectedBook['serial_number']) : '' ?>" readonly>
+
+        <!-- Issue Date Field (Calendar) -->
+        <label for="issueDate">Issue Date:</label>
+        <input type="date" id="issueDate" name="issueDate" required>
+
+        <!-- Return Date Field (Calendar) -->
+        <label for="returnDate">Return Date:</label>
+        <input type="date" id="returnDate" name="returnDate" required>
+
+        <!-- Actual Return Date Field (Calendar) -->
+        <label for="actualReturnDate">Actual Return Date:</label>
+        <input type="date" id="actualReturnDate" name="actualReturnDate" required>
+
+        <!-- Fine Calculated Field -->
+        <label for="fineCalculated">Fine Calculated:</label>
+        <input type="text" id="fineCalculated" name="fineCalculated" value="<?= htmlspecialchars($fine) ?>" readonly>
+
+        <!-- Fine Paid Checkbox (Default unchecked) -->
+        <label for="finePaid">Fine Paid:</label>
+        <input type="checkbox" id="finePaid" name="finePaid" value="1">
+
+        <!-- Remarks Field (Optional) -->
+        <label for="remarks">Remarks (Optional):</label>
+        <textarea id="remarks" name="remarks" rows="4" cols="50"></textarea>
+
+        <!-- Buttons -->
+        <button type="submit">Pay Fine</button>
+        <button class="close-button" onclick="closeDialogue('payFineDialogue'); return false;">Back</button>
+    </form>
+</div>
+
+
     </div>
 
 </body>
